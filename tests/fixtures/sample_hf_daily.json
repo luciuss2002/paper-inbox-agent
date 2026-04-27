@@ -1,0 +1,42 @@
+[
+  {
+    "paper": {
+      "id": "2604.00001",
+      "title": "Search-R1+: Tool-Use Reinforcement Learning for Search-Augmented Reasoning Agents",
+      "summary": "We present Search-R1+, a tool-use reinforcement learning framework that trains reasoning agents to interleave search calls with chain-of-thought.",
+      "authors": [{"name": "Alice Liu"}, {"name": "Bob Chen"}],
+      "publishedAt": "2026-04-25T15:00:00.000Z",
+      "upvotes": 87,
+      "tldr": {"text": "Trains agents to interleave search and reasoning via RL."}
+    },
+    "publishedAt": "2026-04-26T05:00:00.000Z",
+    "title": "Search-R1+: Tool-Use Reinforcement Learning for Search-Augmented Reasoning Agents",
+    "numComments": 12
+  },
+  {
+    "paper": {
+      "id": "2604.00099",
+      "title": "AnomalyVLM: A Vision-Language Foundation Model for Industrial Anomaly Detection",
+      "summary": "AnomalyVLM jointly trains vision and language for zero-shot industrial AD across MVTec-AD and VisA, with state-of-the-art localization.",
+      "authors": [{"name": "Grace Kim"}, {"name": "Henry Zhang"}],
+      "publishedAt": "2026-04-26T08:00:00.000Z",
+      "upvotes": 41
+    },
+    "publishedAt": "2026-04-26T08:00:00.000Z",
+    "title": "AnomalyVLM: A Vision-Language Foundation Model for Industrial Anomaly Detection",
+    "numComments": 5
+  },
+  {
+    "paper": {
+      "id": "2604.00100",
+      "title": "AgentBench-Pro: A Reproducibility-First Benchmark for LLM Agents",
+      "summary": "AgentBench-Pro reproduces 30 LLM agent papers with shared infra and reports a credibility score per claim.",
+      "authors": [{"name": "Iris Park"}],
+      "publishedAt": "2026-04-26T09:30:00.000Z",
+      "upvotes": 156
+    },
+    "publishedAt": "2026-04-26T09:30:00.000Z",
+    "title": "AgentBench-Pro: A Reproducibility-First Benchmark for LLM Agents",
+    "numComments": 23
+  }
+]

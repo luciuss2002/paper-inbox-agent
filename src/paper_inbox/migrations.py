@@ -71,9 +71,23 @@ CREATE TABLE IF NOT EXISTS user_feedback (
   FOREIGN KEY (paper_id) REFERENCES papers(id)
 );
 
+-- v0.2: Semantic Scholar enrichment cache (per paper, latest write wins).
+CREATE TABLE IF NOT EXISTS paper_enrichment (
+  paper_id INTEGER PRIMARY KEY,
+  citation_count INTEGER,
+  influential_citation_count INTEGER,
+  tldr TEXT,
+  year INTEGER,
+  venue TEXT,
+  hf_upvotes INTEGER,
+  fetched_at TEXT NOT NULL,
+  FOREIGN KEY (paper_id) REFERENCES papers(id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_papers_canonical_id ON papers(canonical_id);
 CREATE INDEX IF NOT EXISTS idx_scores_run_date ON triage_scores(run_date);
 CREATE INDEX IF NOT EXISTS idx_scores_priority ON triage_scores(final_priority);
+CREATE INDEX IF NOT EXISTS idx_feedback_paper ON user_feedback(paper_id);
 """
 
 

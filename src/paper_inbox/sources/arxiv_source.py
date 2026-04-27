@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -17,7 +18,14 @@ from paper_inbox.utils.text import collapse_whitespace
 
 logger = logging.getLogger(__name__)
 
-ARXIV_API = "http://export.arxiv.org/api/query"
+# Use https directly: arXiv 301-redirects all http traffic, and httpx doesn't
+# follow redirects by default.
+ARXIV_API = "https://export.arxiv.org/api/query"
+
+# arXiv API ToS: "Make no more than one request every three seconds." We honor
+# this between queries so a 16-keyword config doesn't get the connection
+# slammed shut. https://info.arxiv.org/help/api/tou.html
+DEFAULT_QUERY_INTERVAL = 3.0
 
 
 def _normalize_arxiv_id(raw: str) -> str:
@@ -139,19 +147,46 @@ class ArxivSource(PaperSourceBase):
         *,
         offline_fixture: str | Path | None = None,
         timeout_seconds: float = 30.0,
+        query_interval: float = DEFAULT_QUERY_INTERVAL,
+        retries: int = 2,
     ) -> None:
         self.offline_fixture = Path(offline_fixture) if offline_fixture else None
         self.timeout_seconds = timeout_seconds
+        self.query_interval = query_interval
+        self.retries = retries
 
     def _read_offline_fixture(self) -> str:
         assert self.offline_fixture is not None
         return self.offline_fixture.read_text(encoding="utf-8")
 
-    def _fetch_remote(self, params: dict[str, Any]) -> str:
-        with httpx.Client(timeout=self.timeout_seconds) as client:
-            resp = client.get(ARXIV_API, params=params)
-            resp.raise_for_status()
-            return resp.text
+    def _fetch_remote(self, client: httpx.Client, params: dict[str, Any]) -> str:
+        """One query with up to ``self.retries`` extra attempts on transport errors.
+
+        arXiv occasionally drops the connection (`Server disconnected without
+        sending a response`) when we're at the edge of their rate limit. A
+        short backoff usually makes the next attempt succeed.
+        """
+        last_exc: Exception | None = None
+        for attempt in range(self.retries + 1):
+            try:
+                resp = client.get(ARXIV_API, params=params)
+                resp.raise_for_status()
+                return resp.text
+            except (httpx.TransportError, httpx.HTTPStatusError) as exc:
+                last_exc = exc
+                if attempt < self.retries:
+                    backoff = self.query_interval * (attempt + 1)
+                    logger.info(
+                        "[arxiv] retry %d/%d for %s in %.1fs — %s",
+                        attempt + 1,
+                        self.retries,
+                        params.get("search_query"),
+                        backoff,
+                        exc,
+                    )
+                    time.sleep(backoff)
+        assert last_exc is not None
+        raise last_exc
 
     def fetch(self, config: dict[str, Any]) -> list[PaperMetadata]:
         if self.offline_fixture is not None:
@@ -172,20 +207,32 @@ class ArxivSource(PaperSourceBase):
 
         search_queries = build_search_query(categories, queries)
         seen: dict[str, PaperMetadata] = {}
-        for sq in search_queries:
-            params = {
-                "search_query": sq,
-                "max_results": max_results,
-                "sortBy": sort_by,
-                "sortOrder": sort_order,
-            }
-            try:
-                text = self._fetch_remote(params)
-            except Exception as exc:  # network failures must not break the run
-                logger.warning("[arxiv] query failed: %s — %s", sq, exc)
-                continue
-            for paper in parse_atom_feed(text):
-                seen.setdefault(paper.canonical_id, paper)
+        with httpx.Client(
+            timeout=self.timeout_seconds,
+            follow_redirects=True,  # arXiv may still 301 in some edge cases
+            headers={"User-Agent": "paper-inbox-agent/0.2"},
+        ) as client:
+            for idx, sq in enumerate(search_queries):
+                params = {
+                    "search_query": sq,
+                    "max_results": max_results,
+                    "sortBy": sort_by,
+                    "sortOrder": sort_order,
+                }
+                try:
+                    text = self._fetch_remote(client, params)
+                except Exception as exc:
+                    logger.warning("[arxiv] query failed: %s — %s", sq, exc)
+                    continue
+                hits = parse_atom_feed(text)
+                for paper in hits:
+                    seen.setdefault(paper.canonical_id, paper)
+                logger.info("[arxiv] %s → %d hits (running unique=%d)", sq, len(hits), len(seen))
+
+                # Honor arXiv's 1-req-per-3s policy between queries.
+                if idx < len(search_queries) - 1 and self.query_interval:
+                    time.sleep(self.query_interval)
+
         papers = list(seen.values())
         logger.info("[arxiv] %d unique papers across %d queries", len(papers), len(search_queries))
         return papers

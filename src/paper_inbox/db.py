@@ -291,3 +291,69 @@ def upsert_papers(
     for p in papers:
         out[p.canonical_id] = upsert_paper(conn, p)
     return out
+
+
+# ─── v0.2: enrichment + feedback aggregation ───────────────────────────────
+
+
+def upsert_enrichment(
+    conn: sqlite3.Connection,
+    paper_id: int,
+    *,
+    citation_count: int | None = None,
+    influential_citation_count: int | None = None,
+    tldr: str | None = None,
+    year: int | None = None,
+    venue: str | None = None,
+    hf_upvotes: int | None = None,
+) -> None:
+    """Insert or replace enrichment for a paper. Latest call wins."""
+    conn.execute(
+        """
+        INSERT INTO paper_enrichment (
+            paper_id, citation_count, influential_citation_count,
+            tldr, year, venue, hf_upvotes, fetched_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(paper_id) DO UPDATE SET
+            citation_count = excluded.citation_count,
+            influential_citation_count = excluded.influential_citation_count,
+            tldr = excluded.tldr,
+            year = excluded.year,
+            venue = excluded.venue,
+            hf_upvotes = COALESCE(excluded.hf_upvotes, paper_enrichment.hf_upvotes),
+            fetched_at = excluded.fetched_at
+        """,
+        (
+            paper_id,
+            citation_count,
+            influential_citation_count,
+            tldr,
+            year,
+            venue,
+            hf_upvotes,
+            now_utc_iso(),
+        ),
+    )
+
+
+def get_enrichment(
+    conn: sqlite3.Connection, paper_id: int
+) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT * FROM paper_enrichment WHERE paper_id = ?", (paper_id,)
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def list_feedback(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    """Return every feedback row joined to the paper for downstream aggregation."""
+    rows = conn.execute(
+        """
+        SELECT f.*, p.canonical_id, p.title, p.abstract,
+               p.authors_json, p.categories_json
+        FROM user_feedback f
+        JOIN papers p ON p.id = f.paper_id
+        ORDER BY f.id DESC
+        """
+    ).fetchall()
+    return [dict(r) for r in rows]

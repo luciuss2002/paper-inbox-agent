@@ -18,10 +18,15 @@ def collect_papers(
     *,
     runtime_cfg: dict[str, Any] | None = None,
     offline_fixture: str | Path | None = None,
+    offline_hf_fixture: str | Path | None = None,
 ) -> list[PaperMetadata]:
     """Run all enabled sources and return a flat list of metadata.
 
     A failure in one source must NOT abort the whole run.
+
+    ``offline_fixture`` feeds the arXiv source; ``offline_hf_fixture`` feeds
+    the HF Daily source. Either being set forces that source to bypass the
+    network and read from disk, regardless of ``enabled`` in config.
     """
     timeout = float((runtime_cfg or {}).get("network", {}).get("timeout_seconds", 30))
     out: list[PaperMetadata] = []
@@ -34,9 +39,13 @@ def collect_papers(
         except Exception as exc:
             logger.warning("[collect] arxiv source failed: %s", exc)
 
-    if sources_cfg.get("hf_daily", {}).get("enabled", False):
+    hf_cfg = sources_cfg.get("hf_daily", {})
+    if hf_cfg.get("enabled", False) or offline_hf_fixture:
         try:
-            out.extend(HfDailySource().fetch(sources_cfg))
+            hf = HfDailySource(
+                offline_fixture=offline_hf_fixture, timeout_seconds=timeout
+            )
+            out.extend(hf.fetch(sources_cfg))
         except Exception as exc:
             logger.warning("[collect] hf_daily source failed: %s", exc)
 

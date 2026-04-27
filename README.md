@@ -34,10 +34,17 @@
 - 📂 **自动分桶**：Must Read / Skim / Archive / Ignore，每天给出可执行清单
 - 📝 **结构化 brief**：30 秒版 / 3 分钟版 / 与你方向的关联 / 核心 claim 表 / 可借鉴点
 - 🔌 **可插拔 LLM**：抽象 `LLMClient`，自带 OpenAI 实现 + Mock 实现，支持任何 OpenAI 兼容端点
-- 💾 **SQLite 持久化**：论文元信息、评分、brief、artifact、用户反馈全部入库
-- 🧪 **离线可测**：内置 arXiv fixture + Mock LLM，无网即可跑通 end-to-end
+- 💾 **SQLite 持久化**：论文元信息、评分、brief、artifact、用户反馈、外部元信息全部入库
+- 🧪 **离线可测**：内置 arXiv / HF Daily fixture + Mock LLM，无网即可跑通 end-to-end
 - 🛡️ **默认安全**：不自动执行任何论文/repo 代码，不读取云凭证
 - ⚙️ **配置即代码**：`research_profile.yaml` / `sources.yaml` / `runtime.yaml` 三段式配置
+
+**v0.2 新增**：
+
+- 🤗 **Hugging Face Daily Papers 源**：与 arXiv 同步去重，HF 社区 upvote 数注入打分
+- 📊 **Semantic Scholar 元信息补全**：citation count / influential citations / TLDR / venue 自动入库并喂入 triage prompt
+- 🧠 **用户反馈影响打分**：从 `useful` / `not_relevant` 等历史标注派生喜爱作者 + 关键词，对新论文 `relevance_to_user` 做 ±1 微调
+- 🖥 **Streamlit dashboard**：浏览每日报告、查看 brief、一键打反馈
 
 ## 🚀 Quick Start
 
@@ -62,11 +69,33 @@ cat data/reports/$(date +%F)/daily_brief.md
 切换到真实 LLM：
 
 ```bash
-pip install -e ".[openai]"
+pip install -e ".[openai]"     # DeepSeek 也走这套 SDK（OpenAI 兼容）
 cp .env.example .env
-# 在 .env 中填入 OPENAI_API_KEY=sk-...
+# 在 .env 中填入 OPENAI_API_KEY=sk-... 或 DEEPSEEK_API_KEY=sk-...
 
 paper-inbox run-daily          # 默认从 arXiv 拉取 + 调用真实模型
+```
+
+**用 DeepSeek**：在 `configs/runtime.yaml` 把 `provider` 改成 `"deepseek"`，model id 去
+[api-docs.deepseek.com](https://api-docs.deepseek.com) 查最新别名。常用：
+
+| Model id | 适合 |
+| --- | --- |
+| `deepseek-chat` | 速读 brief（速度优先、便宜） |
+| `deepseek-reasoner` | triage 打分（更深的判断） |
+
+```yaml
+llm:
+  provider: "deepseek"
+  model_triage: "deepseek-reasoner"
+  model_reader: "deepseek-chat"
+```
+
+`.env` 里：
+
+```env
+DEEPSEEK_API_KEY=sk-...
+# 可选：DEEPSEEK_BASE_URL=https://api.deepseek.com
 ```
 
 ## 🧭 Pipeline
@@ -118,13 +147,15 @@ LOG_LEVEL=INFO
 | 命令 | 作用 |
 | --- | --- |
 | `paper-inbox init` | 创建配置 + SQLite |
-| `paper-inbox run-daily [--date Y-M-D] [--mock-llm] [--offline-fixture FILE]` | 跑完整每日流程 |
+| `paper-inbox run-daily [--date Y-M-D] [--mock-llm] [--offline-fixture FILE] [--offline-hf-fixture FILE] [--skip-enrichment]` | 跑完整每日流程 |
 | `paper-inbox collect [--date ...]` | 仅采集 + 去重 + 入库 |
+| `paper-inbox enrich [--limit N] [--only-missing/--all] [--skip-semantic-scholar]` | 用 Semantic Scholar 补充 citation/TLDR 元信息 |
 | `paper-inbox triage [--date ...] [--mock-llm]` | 仅对未打分论文做 LLM 打分 |
 | `paper-inbox brief [--date ...] [--limit N] [--mock-llm]` | 对 N 篇高优先级论文生成 brief |
 | `paper-inbox report [--date ...]` | 重新渲染并打印每日报告路径 |
 | `paper-inbox list [--date ...] [--bucket "Must Read"]` | 列出当天已打分论文 |
 | `paper-inbox feedback --paper-id arxiv:2501.12345 --feedback useful` | 记录用户反馈 |
+| `paper-inbox dashboard [--port 8501]` | 启动 Streamlit dashboard（需 `pip install -e .[ui]`） |
 
 `--feedback` 可选值：`useful` / `not_relevant` / `must_read` / `too_shallow` / `archive`。
 
@@ -168,7 +199,7 @@ pytest && ruff check .
 ## 🗺️ Roadmap
 
 - [x] **v0.1 (MVP)** — arXiv + 打分分桶 + brief + 每日报告 + SQLite + CLI
-- [ ] **v0.2** — Hugging Face Daily Papers 源、Semantic Scholar 元信息补全、用户反馈影响打分、Streamlit 看板
+- [x] **v0.2** — Hugging Face Daily Papers 源、Semantic Scholar 元信息补全、用户反馈影响打分、Streamlit 看板
 - [ ] **v0.3** — 本地向量检索、相关论文图谱、每周 trend report、按 topic 自动归档
 - [ ] **v0.4** — 静态 repo inspector（只读）、复现可行性评估、claim ↔ code 对齐
 

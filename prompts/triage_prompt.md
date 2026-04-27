@@ -10,6 +10,12 @@ Abstract: {{ abstract }}
 Categories: {{ categories }}
 Source: {{ source }}
 Published At: {{ published_at }}
+{% if enrichment %}
+外部元信息：{{ enrichment }}
+{% endif %}
+{% if feedback_signals %}
+{{ feedback_signals }}
+{% endif %}
 
 请输出严格 JSON，不要输出 Markdown，不要输出额外解释。
 

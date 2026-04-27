@@ -48,12 +48,22 @@ logger = logging.getLogger("paper_inbox")
 def _build_llm(*, mock_llm: bool, runtime_cfg: dict) -> LLMClient:
     if mock_llm:
         return MockLLMClient()
-    provider = (runtime_cfg.get("llm") or {}).get("provider", "openai").lower()
+    llm_cfg = runtime_cfg.get("llm") or {}
+    provider = llm_cfg.get("provider", "openai").lower()
+    max_retries = int(llm_cfg.get("max_retries", 3))
+
     if provider == "openai":
         from paper_inbox.llm.openai_client import OpenAIClient
 
-        max_retries = int((runtime_cfg.get("llm") or {}).get("max_retries", 3))
         return OpenAIClient(max_retries=max_retries)
+    if provider == "deepseek":
+        from paper_inbox.llm.deepseek_client import DeepSeekClient
+
+        return DeepSeekClient(
+            max_retries=max_retries,
+            reasoning_effort=llm_cfg.get("reasoning_effort", "high"),
+            thinking_enabled=bool(llm_cfg.get("thinking_enabled", True)),
+        )
     raise typer.BadParameter(f"Unsupported llm.provider: {provider}")
 
 
@@ -108,6 +118,8 @@ def cmd_run_daily(
     runtime: Path = typer.Option(DEFAULT_RUNTIME_PATH, "--runtime"),
     mock_llm: bool = typer.Option(False, "--mock-llm"),
     offline_fixture: Path = typer.Option(None, "--offline-fixture"),
+    offline_hf_fixture: Path = typer.Option(None, "--offline-hf-fixture"),
+    skip_enrichment: bool = typer.Option(False, "--skip-enrichment"),
 ) -> None:
     """Run the full daily pipeline."""
     configure_logging()
@@ -122,12 +134,15 @@ def cmd_run_daily(
             llm=llm,
             profile=research_profile,
             offline_fixture=offline_fixture,
+            offline_hf_fixture=offline_hf_fixture,
+            skip_enrichment=skip_enrichment,
         )
     )
 
     typer.echo(f"\nDaily Inbox — {result.run_date}")
     typer.echo(f"  collected : {result.total_collected}")
     typer.echo(f"  deduped   : {result.after_dedupe}")
+    typer.echo(f"  enriched  : {result.enriched}")
     typer.echo(f"  triaged   : {result.triaged}")
     typer.echo(f"  briefs    : {result.briefs_generated}")
     typer.echo(f"  report    : {result.report_path}")
@@ -140,6 +155,7 @@ def cmd_collect(
     sources: Path = typer.Option(DEFAULT_SOURCES_PATH, "--sources"),
     runtime: Path = typer.Option(DEFAULT_RUNTIME_PATH, "--runtime"),
     offline_fixture: Path = typer.Option(None, "--offline-fixture"),
+    offline_hf_fixture: Path = typer.Option(None, "--offline-hf-fixture"),
 ) -> None:
     """Only collect + dedupe + upsert papers."""
     configure_logging()
@@ -152,6 +168,7 @@ def cmd_collect(
         settings.sources,
         runtime_cfg=settings.runtime,
         offline_fixture=offline_fixture,
+        offline_hf_fixture=offline_hf_fixture,
     )
     deduped = dedupe_papers(raw)
 
@@ -161,6 +178,86 @@ def cmd_collect(
         conn.commit()
 
     typer.echo(f"[collect] {run_date}: raw={len(raw)} unique={len(deduped)}")
+
+
+@app.command("enrich")
+def cmd_enrich(
+    runtime: Path = typer.Option(DEFAULT_RUNTIME_PATH, "--runtime"),
+    limit: int = typer.Option(50, "--limit", help="Max papers to enrich in one run"),
+    only_missing: bool = typer.Option(
+        True, "--only-missing/--all",
+        help="Skip papers that already have enrichment (default) or refresh all",
+    ),
+    skip_s2: bool = typer.Option(
+        False, "--skip-semantic-scholar",
+        help="Skip the Semantic Scholar API; only persist HF upvotes",
+    ),
+) -> None:
+    """Run Semantic Scholar enrichment on already-stored papers."""
+    configure_logging()
+    settings = load_settings(
+        runtime_path=runtime,
+        sources_path=DEFAULT_SOURCES_PATH,
+        profile_path=DEFAULT_PROFILE_PATH,
+    )
+    paths = RuntimePaths.from_config(settings.runtime)
+    ensure_paths(paths)
+
+    from paper_inbox.db import metadata_from_row
+    from paper_inbox.pipeline.enrich import enrich_papers
+
+    where = (
+        "WHERE NOT EXISTS (SELECT 1 FROM paper_enrichment e WHERE e.paper_id = p.id)"
+        if only_missing else ""
+    )
+    with session(paths.db_path) as conn:
+        rows = conn.execute(
+            f"SELECT p.* FROM papers p {where} ORDER BY p.id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        targets = [(int(r["id"]), metadata_from_row(dict(r))) for r in rows]
+        if not targets:
+            typer.echo("(no papers to enrich)")
+            return
+        results = enrich_papers(conn, targets, skip_semantic_scholar=skip_s2)
+
+    typer.echo(
+        f"[enrich] processed {len(targets)} papers · "
+        f"semantic-scholar hits {len(results)} · "
+        f"hf upvotes persisted for any HF-tagged paper"
+    )
+
+
+@app.command("dashboard")
+def cmd_dashboard(
+    port: int = typer.Option(8501, "--port"),
+    host: str = typer.Option("localhost", "--host"),
+) -> None:
+    """Launch the Streamlit dashboard.
+
+    Requires the ``ui`` extra: ``pip install -e .[ui]``.
+    """
+    configure_logging()
+    try:
+        import streamlit  # noqa: F401
+    except ImportError as exc:
+        raise typer.BadParameter(
+            "streamlit not installed. Run: pip install -e '.[ui]'"
+        ) from exc
+    import subprocess
+    import sys
+
+    from paper_inbox import dashboard
+
+    app_path = Path(dashboard.__file__).parent / "app.py"
+    cmd = [
+        sys.executable, "-m", "streamlit", "run", str(app_path),
+        "--server.port", str(port),
+        "--server.address", host,
+        "--browser.gatherUsageStats", "false",
+    ]
+    typer.echo(f"Launching: {' '.join(cmd)}")
+    subprocess.run(cmd, check=False)
 
 
 @app.command("triage")

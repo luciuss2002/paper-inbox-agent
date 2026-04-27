@@ -6,12 +6,27 @@ paths:
   reports_dir: "./data/reports"
   db_path: "./data/paper_inbox.sqlite"
 
+# Supported providers: "openai", "deepseek"
+# DeepSeek's API is OpenAI-compatible; set DEEPSEEK_API_KEY in .env.
+# Common DeepSeek model ids:
+#   deepseek-chat       — latest V-series, general-purpose, fast
+#   deepseek-reasoner   — latest R-series, slower, better at deep analysis
+# Pick whichever id DeepSeek currently exposes for the version you want.
 llm:
   provider: "openai"
   model_triage: "gpt-5.5-thinking"
   model_reader: "gpt-5.5-thinking"
   temperature: 0.2
   max_retries: 3
+
+  # Example DeepSeek configuration (uncomment & swap):
+  #
+  # provider: "deepseek"
+  # model_triage: "deepseek-reasoner"   # 推理模型，triage 收益高
+  # model_reader: "deepseek-chat"       # 速读模型，速度更重要
+  # temperature: 0.2
+  # reasoning_effort: "high"            # low | medium | high | max
+  # thinking_enabled: true              # 启用 DeepSeek 的 thinking 模式
 
 pipeline:
   daily_candidate_limit: 150
@@ -20,6 +35,13 @@ pipeline:
     - "Skim"
   max_pdf_to_read_per_day: 8
   min_priority_for_pdf_read: 70
+  use_feedback_signals: true   # v0.2: feed user_feedback into triage
+
+# v0.2: external metadata enrichment.
+# Semantic Scholar free tier is ~1 RPS; set SEMANTIC_SCHOLAR_API_KEY in .env
+# to lift that limit.
+enrichment:
+  semantic_scholar_enabled: true
 
 network:
   timeout_seconds: 30

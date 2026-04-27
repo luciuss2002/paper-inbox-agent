@@ -24,6 +24,7 @@ dependencies = [
 [project.optional-dependencies]
 openai = ["openai>=1.40"]
 pymupdf = ["pymupdf>=1.24"]
+ui = ["streamlit>=1.30"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",

@@ -16,5 +16,5 @@ arxiv:
   sort_order: "descending"
 
 hf_daily:
-  enabled: false
+  enabled: true
   max_results: 30
