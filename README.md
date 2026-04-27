@@ -50,7 +50,7 @@
 
 ```bash
 # 1) 安装
-git clone https://github.com/<you>/paper-inbox-agent.git
+git clone https://github.com/luciuss2002/paper-inbox-agent.git
 cd paper-inbox-agent
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
