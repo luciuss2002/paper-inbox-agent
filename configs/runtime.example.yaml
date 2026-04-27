@@ -1,0 +1,26 @@
+paths:
+  data_dir: "./data"
+  pdf_dir: "./data/pdfs"
+  parsed_dir: "./data/parsed"
+  briefs_dir: "./data/briefs"
+  reports_dir: "./data/reports"
+  db_path: "./data/paper_inbox.sqlite"
+
+llm:
+  provider: "openai"
+  model_triage: "gpt-5.5-thinking"
+  model_reader: "gpt-5.5-thinking"
+  temperature: 0.2
+  max_retries: 3
+
+pipeline:
+  daily_candidate_limit: 150
+  download_pdf_for_buckets:
+    - "Must Read"
+    - "Skim"
+  max_pdf_to_read_per_day: 8
+  min_priority_for_pdf_read: 70
+
+network:
+  timeout_seconds: 30
+  max_retries: 3

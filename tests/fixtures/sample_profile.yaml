@@ -1,0 +1,28 @@
+user:
+  name: "Test User"
+
+interests:
+  high:
+    - agentic reinforcement learning
+    - tool use RL
+    - search augmented reasoning
+    - paper reading agents
+  medium:
+    - long context
+    - LoRA training
+  low:
+    - pure computer vision
+    - pure robotics
+
+favorite_papers:
+  - Search-R1
+  - ReAct
+
+negative_examples:
+  - papers with only benchmark leaderboard gains
+
+output_preferences:
+  max_must_read_per_day: 3
+  max_skim_per_day: 5
+  brief_language: "zh"
+  note_style: "researcher_brief"

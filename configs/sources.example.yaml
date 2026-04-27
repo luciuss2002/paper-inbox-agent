@@ -1,0 +1,20 @@
+arxiv:
+  enabled: true
+  categories:
+    - cs.CL
+    - cs.AI
+    - cs.LG
+  queries:
+    - "agentic reinforcement learning"
+    - "tool use"
+    - "search augmented reasoning"
+    - "paper reading agent"
+    - "code agent"
+    - "long context"
+  max_results_per_query: 25
+  sort_by: "submittedDate"
+  sort_order: "descending"
+
+hf_daily:
+  enabled: false
+  max_results: 30

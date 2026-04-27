@@ -1,0 +1,38 @@
+user:
+  name: "Researcher"
+
+interests:
+  high:
+    - agentic reinforcement learning
+    - tool use RL
+    - search augmented reasoning
+    - paper reading agents
+    - code agents
+    - reproducibility evaluation
+  medium:
+    - LoRA training
+    - long context
+    - RAG
+    - workflow automation
+  low:
+    - pure computer vision
+    - pure robotics
+    - pure hardware optimization
+
+favorite_papers:
+  - Search-R1
+  - ReAct
+  - WebGPT
+  - Toolformer
+  - Voyager
+
+negative_examples:
+  - papers with only benchmark leaderboard gains
+  - papers without method novelty
+  - papers requiring huge compute with no small-scale insight
+
+output_preferences:
+  max_must_read_per_day: 5
+  max_skim_per_day: 15
+  brief_language: "zh"
+  note_style: "researcher_brief"

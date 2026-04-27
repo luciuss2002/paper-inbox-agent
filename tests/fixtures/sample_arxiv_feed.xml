@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <title>arXiv Query Sample</title>
+  <id>http://arxiv.org/api/sample-feed</id>
+  <updated>2026-04-27T00:00:00Z</updated>
+  <entry>
+    <id>http://arxiv.org/abs/2604.00001v1</id>
+    <updated>2026-04-25T15:00:00Z</updated>
+    <published>2026-04-25T15:00:00Z</published>
+    <title>Search-R1+: Tool-Use Reinforcement Learning for Search-Augmented Reasoning Agents</title>
+    <summary>We present Search-R1+, a tool-use reinforcement learning framework that
+trains reasoning agents to interleave search calls with chain-of-thought.
+The method combines a policy gradient objective with retrieval-augmented
+verification and demonstrates strong gains on multi-hop QA, web research,
+and long-form reasoning benchmarks. Code and checkpoints are released.</summary>
+    <author><name>Alice Liu</name></author>
+    <author><name>Bob Chen</name></author>
+    <link rel="alternate" type="text/html" href="http://arxiv.org/abs/2604.00001v1"/>
+    <link title="pdf" rel="related" type="application/pdf" href="http://arxiv.org/pdf/2604.00001v1.pdf"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.CL"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.00002v1</id>
+    <updated>2026-04-26T10:00:00Z</updated>
+    <published>2026-04-26T10:00:00Z</published>
+    <title>A Comprehensive Benchmark for Pure Computer Vision Object Detection</title>
+    <summary>We present an exhaustive benchmark for object detection in the wild,
+covering 50 datasets and 30 baselines. Our analysis focuses on
+leaderboard performance, with ablations on model size and training schedules.
+We do not propose a new method.</summary>
+    <author><name>Carol Wang</name></author>
+    <link rel="alternate" type="text/html" href="http://arxiv.org/abs/2604.00002v1"/>
+    <link title="pdf" rel="related" type="application/pdf" href="http://arxiv.org/pdf/2604.00002v1.pdf"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.CV"/>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.00003v2</id>
+    <updated>2026-04-26T18:30:00Z</updated>
+    <published>2026-04-24T09:30:00Z</published>
+    <title>Paper Reading Agents with Long-Context Retrieval and Self-Critique</title>
+    <summary>We introduce a paper reading agent that combines long-context
+retrieval and a self-critic loop to generate research-grade briefs from
+PDFs. The agent improves over single-pass summarization on a curated
+benchmark of 200 ML papers, with strong reproducibility signals: code,
+prompts, and evaluation harness are released.</summary>
+    <author><name>Dan Park</name></author>
+    <author><name>Eve Sato</name></author>
+    <link rel="alternate" type="text/html" href="http://arxiv.org/abs/2604.00003v2"/>
+    <link title="pdf" rel="related" type="application/pdf" href="http://arxiv.org/pdf/2604.00003v2.pdf"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.CL"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.00004v1</id>
+    <updated>2026-04-26T12:00:00Z</updated>
+    <published>2026-04-26T12:00:00Z</published>
+    <title>LoRA Training at Scale: Empirical Study on Long-Context Adaptation</title>
+    <summary>We empirically study low-rank adaptation for long-context language
+models up to 256k tokens, revealing trade-offs between rank, memory, and
+downstream performance. Workflow automation tooling and training recipes
+are released.</summary>
+    <author><name>Frank Zhao</name></author>
+    <link rel="alternate" type="text/html" href="http://arxiv.org/abs/2604.00004v1"/>
+    <link title="pdf" rel="related" type="application/pdf" href="http://arxiv.org/pdf/2604.00004v1.pdf"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.LG"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+</feed>
